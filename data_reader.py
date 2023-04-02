@@ -7,6 +7,7 @@ import dateutil.parser
 TS_ERP = 'ERP'
 TS_RECESSION = 'Recession'
 TS_BREAK_EVEN = 'Breakeven Inflation'
+TS_NOMINAL = 'Nominal Rate'
 
 
 def _dt2date(x):
@@ -39,6 +40,19 @@ def load_all_data_sets():
         be_dfs.append(df_iter.set_index('Date'))
 
     data_sets[TS_BREAK_EVEN] = pd.concat(be_dfs, axis=1).sort_index()
+
+    df_nominal = pd.read_excel('dataset.xlsx', sheet_name='Nominal Rate', skiprows=6).iloc[:, 1:]
+    df_fed = df_nominal[['observation_date', 'Fed Fund Effective Rate']]
+    df_fed['Date'] = df_fed['observation_date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
+    nominal_dfs = [df_fed[df_fed['Date'].notnull()][['Date', 'Fed Fund Effective Rate']].set_index('Date')]
+    for i in range(4):
+        df_iter = df_nominal.iloc[:, (3 + 2*i): (3 + 2*i + 2)]
+        df_iter.columns = ['Date'] + [df_iter.columns[1]]
+        df_iter = df_iter[df_iter['Date'].notnull()]
+        df_iter.loc[:, 'Date'] = df_iter.loc[:, 'Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
+        nominal_dfs.append(df_iter.set_index('Date'))
+    data_sets[TS_NOMINAL] = pd.concat(nominal_dfs, axis=1).sort_index()
+
 
     return data_sets
 
