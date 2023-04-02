@@ -8,6 +8,10 @@ TS_ERP = 'ERP'
 TS_RECESSION = 'Recession'
 TS_BREAK_EVEN = 'Breakeven Inflation'
 TS_NOMINAL = 'Nominal Rate'
+TS_REAL_GDP = 'Real GDP'
+TS_CREDIT_SPREAD = 'Credit Spread'
+TS_MONETARY = 'Monetary'
+TS_UNEMPLOYMENT = 'Unemployment'
 
 
 def _dt2date(x):
@@ -20,6 +24,7 @@ def load_all_data_sets():
     data_sets = {}
 
     df_erp = pd.read_excel('dataset.xlsx', sheet_name='SHILLER', skiprows=3).iloc[:, 1:4]
+    # TODO: SWITCH TO MONTH END
     df_erp['Date'] = df_erp['BOM'].apply(lambda x:  dateutil.parser.parse("{:.2f}.01".format(x))).apply(_dt2date)
     df_erp = df_erp[['Date', 'CPI', 'Excess CAPE Yield']].set_index('Date')
     data_sets[TS_ERP] = df_erp
@@ -52,6 +57,14 @@ def load_all_data_sets():
         df_iter.loc[:, 'Date'] = df_iter.loc[:, 'Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
         nominal_dfs.append(df_iter.set_index('Date'))
     data_sets[TS_NOMINAL] = pd.concat(nominal_dfs, axis=1).sort_index()
+
+    df_real_gdp = pd.read_excel('dataset.xlsx', sheet_name='Real GDP', skiprows=5).iloc[:, 2:]
+    df_real_gdp['Date'] = df_real_gdp['observation_date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
+    data_sets[TS_REAL_GDP] = df_real_gdp[['Date', 'RealGDP']].set_index('Date')
+
+    df_credit_spread = pd.read_excel('dataset.xlsx', sheet_name='CreditSpread', skiprows=4).iloc[:, 1:]
+    df_credit_spread['Date'] = df_credit_spread['Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
+    data_sets[TS_CREDIT_SPREAD] = df_credit_spread[['Date', 'US IG Spread', 'US HY Spread']].set_index('Date')
 
 
     return data_sets
