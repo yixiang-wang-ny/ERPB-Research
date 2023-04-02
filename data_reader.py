@@ -78,7 +78,6 @@ def load_all_data_sets():
     df_unemployment['Date'] = df_unemployment['Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
     data_sets[TS_UNEMPLOYMENT] = df_unemployment.set_index('Date')
 
-
     return data_sets
 
 
