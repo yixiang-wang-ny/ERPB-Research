@@ -38,7 +38,7 @@ def load_all_data_sets():
         df_iter.loc[:, 'Date'] = df_iter.loc[:, 'Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
         be_dfs.append(df_iter.set_index('Date'))
 
-    data_sets[TS_BREAK_EVEN] = pd.merge(be_dfs, axis=1)
+    data_sets[TS_BREAK_EVEN] = pd.concat(be_dfs, axis=1).sort_index()
 
     return data_sets
 
