@@ -66,6 +66,13 @@ def load_all_data_sets():
     df_credit_spread['Date'] = df_credit_spread['Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
     data_sets[TS_CREDIT_SPREAD] = df_credit_spread[['Date', 'US IG Spread', 'US HY Spread']].set_index('Date')
 
+    df_money = pd.read_excel('dataset.xlsx', sheet_name='Real_M1_M2', skiprows=6).iloc[:, 2:]
+    df_m1 = df_money[['Month End.1', 'Real_M1']].rename(columns={'Month End.1': 'Date'})
+    df_m1['Date'] = df_m1['Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
+    df_m2 = df_money[['Month End', 'Real_M2']].rename(columns={'Month End': 'Date'})
+    df_m2['Date'] = df_m2['Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
+
+    data_sets[TS_MONETARY] = pd.concat([df_m1.set_index('Date'), df_m2.set_index('Date')], axis=1)
 
     return data_sets
 
