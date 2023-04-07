@@ -45,7 +45,8 @@ def load_all_data_sets():
         df_iter.loc[:, 'Date'] = df_iter.loc[:, 'Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
         be_dfs.append(df_iter.set_index('Date'))
 
-    data_sets[TS_BREAK_EVEN] = pd.concat(be_dfs, axis=1).sort_index()
+    data_sets[TS_BREAK_EVEN] = pd.concat(be_dfs, axis=1).reset_index().rename(columns={'index': 'Date'}
+                                                                              ).set_index('Date').sort_index()
 
     df_nominal = pd.read_excel('dataset.xlsx', sheet_name='Nominal Rate', skiprows=6).iloc[:, 1:]
     df_fed = df_nominal[['observation_date', 'Fed Fund Effective Rate']]
@@ -57,7 +58,8 @@ def load_all_data_sets():
         df_iter = df_iter[df_iter['Date'].notnull()]
         df_iter.loc[:, 'Date'] = df_iter.loc[:, 'Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
         nominal_dfs.append(df_iter.set_index('Date'))
-    data_sets[TS_NOMINAL] = pd.concat(nominal_dfs, axis=1).sort_index()
+    data_sets[TS_NOMINAL] = pd.concat(nominal_dfs, axis=1).reset_index().rename(columns={'index': 'Date'}
+                                                                                ).set_index('Date').sort_index()
 
     df_real_gdp = pd.read_excel('dataset.xlsx', sheet_name='Real GDP', skiprows=5).iloc[:, 2:]
     df_real_gdp['Date'] = df_real_gdp['observation_date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
@@ -87,9 +89,42 @@ def load_all_data_sets():
     return data_sets
 
 
+def _date_month_format(x):
+    return x.strftime('%b-%Y')
+
+
+def consolidate_time_series():
+
+    data_sets = load_all_data_sets()
+
+    for k in data_sets:
+        if k == 'Recession':
+            continue
+
+        df = data_sets[k].sort_index().reset_index()
+        df['MonthYear'] = df['Date'].apply(_date_month_format)
+        data_sets[k] = df
+
+    df_erp = data_sets[TS_ERP]
+    df_recession = data_sets[TS_RECESSION]
+    df_be = data_sets[TS_BREAK_EVEN]
+    df_nominal = data_sets[TS_NOMINAL]
+    df_real_gdp = data_sets[TS_REAL_GDP]
+    df_credit_spread = data_sets[TS_CREDIT_SPREAD]
+    df_ts_monetary = data_sets[TS_MONETARY]
+    df_unemployment = data_sets[TS_UNEMPLOYMENT]
+    df_acm_term_premia = data_sets[TS_ACM_TERM_PREMIA]
+
+
+
+
+    return
+
+
+
 def main():
 
-    load_all_data_sets()
+    consolidate_time_series()
 
 
 if __name__ == '__main__':
