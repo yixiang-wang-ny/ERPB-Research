@@ -127,7 +127,7 @@ def consolidate_time_series():
     df_erp['In Recession'] = df_erp['Recession Period'].notnull()
     df_erp['CPI Change'] = df_erp['CPI'] - df_erp['CPI'].shift(1)
 
-    dfs.append(df_erp.set_index('MonthYear').drop('Date', axis=1)[['Excess CAPE Yield', 'CPI', 'CPI Change', 'Recession Period', 'In Recession']])
+    dfs.append(df_erp.set_index('MonthYear')[['Date', 'Excess CAPE Yield', 'CPI', 'CPI Change', 'Recession Period', 'In Recession']])
 
     df_be = data_sets[TS_BREAK_EVEN]
     df_be_month_end = df_be.groupby('MonthYear').tail(1)
@@ -141,6 +141,8 @@ def consolidate_time_series():
     dfs.append(df_nominal_month_end.set_index('MonthYear').drop('Date', axis=1))
 
     df_real_gdp = data_sets[TS_REAL_GDP]
+    dfs.append(df_real_gdp.set_index('MonthYear').drop('Date', axis=1))
+
     df_credit_spread = data_sets[TS_CREDIT_SPREAD]
     df_ts_monetary = data_sets[TS_MONETARY]
     df_unemployment = data_sets[TS_UNEMPLOYMENT]
