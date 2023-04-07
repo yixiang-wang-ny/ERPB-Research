@@ -3,6 +3,7 @@ import os
 from functools import lru_cache
 import datetime as dt
 import dateutil.parser
+import pandas.tseries.offsets as offsets
 
 TS_ERP = 'ERP'
 TS_RECESSION = 'Recession'
@@ -28,6 +29,7 @@ def load_all_data_sets():
     df_erp = pd.read_excel('dataset.xlsx', sheet_name='SHILLER', skiprows=3).iloc[:, 1:4]
     # TODO: SWITCH TO MONTH END
     df_erp['Date'] = df_erp['BOM'].apply(lambda x:  dateutil.parser.parse("{:.2f}.01".format(x))).apply(_dt2date)
+    df_erp['Date'] = df_erp['Date'].apply(lambda x: _dt2date(x + offsets.MonthEnd()))
     df_erp = df_erp[['Date', 'CPI', 'Excess CAPE Yield']].set_index('Date')
     data_sets[TS_ERP] = df_erp
 
@@ -141,20 +143,35 @@ def consolidate_time_series():
     dfs.append(df_nominal_month_end.set_index('MonthYear').drop('Date', axis=1))
 
     df_real_gdp = data_sets[TS_REAL_GDP]
+    df_real_gdp['RealGDP Annualized Growth 1yr'] = (df_real_gdp['RealGDP']/df_real_gdp['RealGDP'].shift(1)) - 1
+    df_real_gdp['RealGDP Annualized Growth 3yr'] = ((df_real_gdp['RealGDP']/df_real_gdp['RealGDP'].shift(3)))**(1/3)-1
+    df_real_gdp['RealGDP Annualized Growth 5yr'] = ((df_real_gdp['RealGDP'] / df_real_gdp['RealGDP'].shift(5))) ** (1/5)-1
     dfs.append(df_real_gdp.set_index('MonthYear').drop('Date', axis=1))
 
     df_credit_spread = data_sets[TS_CREDIT_SPREAD]
+    df_credit_spread_month_end = df_credit_spread.groupby('MonthYear').tail(1)
+    dfs.append(df_credit_spread_month_end.set_index('MonthYear').drop('Date', axis=1))
+
     df_ts_monetary = data_sets[TS_MONETARY]
+    df_ts_monetary['Real_M1_Growth'] = df_ts_monetary['Real_M1'] - df_ts_monetary['Real_M1'].shift(1)
+    df_ts_monetary['Real_M2_Growth'] = df_ts_monetary['Real_M2'] - df_ts_monetary['Real_M2'].shift(1)
+    dfs.append(df_ts_monetary.set_index('MonthYear').drop('Date', axis=1))
+
     df_unemployment = data_sets[TS_UNEMPLOYMENT]
+    dfs.append(df_unemployment.set_index('MonthYear').drop('Date', axis=1))
+
     df_acm_term_premia = data_sets[TS_ACM_TERM_PREMIA]
+    df_acm_term_premia_month_end = df_acm_term_premia.groupby('MonthYear').tail(1)
+    dfs.append(df_acm_term_premia_month_end.set_index('MonthYear').drop('Date', axis=1))
 
-    df_all = pd.concat([
-        df_erp.set_index('MonthYear').drop('Date', axis=1)[['Excess CAPE Yield', 'CPI']]
-    ])
-
+    df_all = pd.concat(dfs)
 
     return
 
+
+def divide_to_period():
+
+    return
 
 
 def main():
