@@ -46,30 +46,18 @@ class BooleanSampler(Sampler):
         return df
 
 
-def feature_basic_analysis(df, feature_name):
-
-    return df
-
-
-def feature_single_variable_regression_analysis(df, feature_name):
-
-    return df
-
-
-def feature_buckets_analysis(df, feature_name, sampler: Sampler):
-
-    df_grouped = sampler.divide(df, feature_name)
-
-    print(df_grouped.groupby('group')['Excess CAPE Yield'].describe())
-
-    return df_grouped
-
-
 def main():
 
     df = get_data()
+    sampler = QuantileSampler(4)
+    feature = 'Fed Fund Effective Rate'
 
-    feature_buckets_analysis(df, 'CPI Change', QuantileSampler(4))
+    df_grouped = sampler.divide(df, feature)
+
+    df_grouped.plot.scatter(x='Fed Fund Effective Rate', y='Excess CAPE Yield', )
+
+    print(df_grouped.groupby('group')['Excess CAPE Yield'].describe())
+    df_grouped[['Excess CAPE Yield', 'group']].boxplot(by="group")
 
     return
 
