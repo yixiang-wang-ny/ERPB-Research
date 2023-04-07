@@ -7,6 +7,7 @@ import dateutil.parser
 TS_ERP = 'ERP'
 TS_RECESSION = 'Recession'
 TS_BREAK_EVEN = 'Breakeven Inflation'
+TS_FED_FUND = 'Fed Fund Rate'
 TS_NOMINAL = 'Nominal Rate'
 TS_REAL_GDP = 'Real GDP'
 TS_CREDIT_SPREAD = 'Credit Spread'
@@ -48,10 +49,13 @@ def load_all_data_sets():
     data_sets[TS_BREAK_EVEN] = pd.concat(be_dfs, axis=1).reset_index().rename(columns={'index': 'Date'}
                                                                               ).set_index('Date').sort_index()
 
-    df_nominal = pd.read_excel('dataset.xlsx', sheet_name='Nominal Rate', skiprows=6).iloc[:, 1:]
-    df_fed = df_nominal[['observation_date', 'Fed Fund Effective Rate']]
+    df_fed = pd.read_excel('dataset.xlsx', sheet_name='Nominal Rate', skiprows=6).iloc[:, 1:3]
+    df_fed = df_fed[['observation_date', 'Fed Fund Effective Rate']]
     df_fed['Date'] = df_fed['observation_date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
-    nominal_dfs = [df_fed[df_fed['Date'].notnull()][['Date', 'Fed Fund Effective Rate']].set_index('Date')]
+    data_sets[TS_FED_FUND] = df_fed[df_fed['Date'].notnull()][['Date', 'Fed Fund Effective Rate']].set_index('Date')
+
+    df_nominal = pd.read_excel('dataset.xlsx', sheet_name='Nominal Rate', skiprows=6).iloc[:, 1:]
+    nominal_dfs = []
     for i in range(4):
         df_iter = df_nominal.iloc[:, (3 + 2*i): (3 + 2*i + 2)]
         df_iter.columns = ['Date'] + [df_iter.columns[1]]
@@ -121,9 +125,21 @@ def consolidate_time_series():
     df_erp = data_sets[TS_ERP]
     df_erp['Recession Period'] = df_erp['Date'].apply(_get_recession)
     df_erp['In Recession'] = df_erp['Recession Period'].notnull()
+    df_erp['CPI Change'] = df_erp['CPI'] - df_erp['CPI'].shift(1)
+
+    dfs.append(df_erp.set_index('MonthYear').drop('Date', axis=1)[['Excess CAPE Yield', 'CPI', 'CPI Change', 'Recession Period', 'In Recession']])
 
     df_be = data_sets[TS_BREAK_EVEN]
+    df_be_month_end = df_be.groupby('MonthYear').tail(1)
+    dfs.append(df_be_month_end.set_index('MonthYear').drop('Date', axis=1))
+
+    df_fed_fund = data_sets[TS_FED_FUND][['MonthYear', 'Fed Fund Effective Rate']]
+    dfs.append(df_fed_fund.groupby('MonthYear').tail(1).set_index('MonthYear'))
+
     df_nominal = data_sets[TS_NOMINAL]
+    df_nominal_month_end = df_nominal.groupby('MonthYear').tail(1)
+    dfs.append(df_nominal_month_end.set_index('MonthYear').drop('Date', axis=1))
+
     df_real_gdp = data_sets[TS_REAL_GDP]
     df_credit_spread = data_sets[TS_CREDIT_SPREAD]
     df_ts_monetary = data_sets[TS_MONETARY]
