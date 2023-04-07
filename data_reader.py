@@ -177,11 +177,6 @@ def consolidate_time_series():
     return df_out
 
 
-def divide_to_period():
-
-    return
-
-
 def main():
 
     consolidate_time_series()
