@@ -18,7 +18,7 @@ class Sampler(ABC):
 
     def divide(self, df, feature) -> pd.DataFrame:
 
-        df = df[df[feature].notnull()]
+        df = df[df[feature].notnull() & df[self.dependent_variable].notnull()]
         df_divided = self._divide(df.copy(), feature)
 
         return df_divided[
@@ -26,14 +26,15 @@ class Sampler(ABC):
         ].set_index('MonthYear')
 
 
-class EqualSizeSampler(Sampler):
+class QuantileSampler(Sampler):
 
     def __init__(self, q: int):
         self.q = q
 
     def _divide(self, df, feature) -> pd.DataFrame:
 
-        return
+        df[self.group_col_name] = pd.qcut(df[feature], self.q)
+        return df
 
 
 class BooleanSampler(Sampler):
@@ -59,6 +60,8 @@ def feature_buckets_analysis(df, feature_name, sampler: Sampler):
 
     df_grouped = sampler.divide(df, feature_name)
 
+    print(df_grouped.groupby('group')['Excess CAPE Yield'].describe())
+
     return df_grouped
 
 
@@ -66,7 +69,7 @@ def main():
 
     df = get_data()
 
-    feature_buckets_analysis(df, 'CPI Change', EqualSizeSampler(4))
+    feature_buckets_analysis(df, 'CPI Change', QuantileSampler(4))
 
     return
 
