@@ -4,6 +4,7 @@ from functools import lru_cache
 import datetime as dt
 import dateutil.parser
 import pandas.tseries.offsets as offsets
+from functools import reduce
 
 TS_ERP = 'ERP'
 TS_RECESSION = 'Recession'
@@ -164,9 +165,16 @@ def consolidate_time_series():
     df_acm_term_premia_month_end = df_acm_term_premia.groupby('MonthYear').tail(1)
     dfs.append(df_acm_term_premia_month_end.set_index('MonthYear').drop('Date', axis=1))
 
-    df_all = pd.concat(dfs)
+    df_out = reduce(lambda a, b: a.join(b), dfs[1:], dfs[0]).sort_values('Date', ascending=False)
 
-    return
+    for col in [
+        'RealGDP', 'RealGDP Annualized Growth 1yr', 'RealGDP Annualized Growth 3yr', 'RealGDP Annualized Growth 5yr'
+    ]:
+        df_out[col] = df_out[col].fillna(method='bfill')
+
+    df_out.to_csv('erp-macro-factors-time-series.csv')
+
+    return df_out
 
 
 def divide_to_period():
