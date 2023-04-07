@@ -12,6 +12,7 @@ TS_REAL_GDP = 'Real GDP'
 TS_CREDIT_SPREAD = 'Credit Spread'
 TS_MONETARY = 'Monetary'
 TS_UNEMPLOYMENT = 'Unemployment'
+TS_ACM_TERM_PREMIA = 'ACM Term Premia'
 
 
 def _dt2date(x):
@@ -77,6 +78,11 @@ def load_all_data_sets():
         columns={'Month End': 'Date'})
     df_unemployment['Date'] = df_unemployment['Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
     data_sets[TS_UNEMPLOYMENT] = df_unemployment.set_index('Date')
+
+    df_acm_term_premia = pd.read_excel('dataset.xlsx', sheet_name='ACM Term Premia').rename(
+        columns={'DATE': 'Date'})
+    df_acm_term_premia['Date'] = df_acm_term_premia['Date'].apply(lambda x: dateutil.parser.parse(str(x))).apply(_dt2date)
+    data_sets[TS_ACM_TERM_PREMIA] = df_acm_term_premia.set_index('Date')
 
     return data_sets
 
