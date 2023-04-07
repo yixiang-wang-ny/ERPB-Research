@@ -105,8 +105,23 @@ def consolidate_time_series():
         df['MonthYear'] = df['Date'].apply(_date_month_format)
         data_sets[k] = df
 
+    dfs = []
+
+    recession_periods = [
+        (row[0], row[1]) for _, row in data_sets[TS_RECESSION].iterrows()
+    ]
+
+    def _get_recession(x):
+        for recession_start, recession_end in recession_periods:
+            if recession_start <= x <= recession_end:
+                return f'{recession_start.strftime("%Y/%m")}-{recession_end.strftime("%Y/%m")}'
+
+        return None
+
     df_erp = data_sets[TS_ERP]
-    df_recession = data_sets[TS_RECESSION]
+    df_erp['Recession Period'] = df_erp['Date'].apply(_get_recession)
+    df_erp['In Recession'] = df_erp['Recession Period'].notnull()
+
     df_be = data_sets[TS_BREAK_EVEN]
     df_nominal = data_sets[TS_NOMINAL]
     df_real_gdp = data_sets[TS_REAL_GDP]
@@ -115,7 +130,9 @@ def consolidate_time_series():
     df_unemployment = data_sets[TS_UNEMPLOYMENT]
     df_acm_term_premia = data_sets[TS_ACM_TERM_PREMIA]
 
-
+    df_all = pd.concat([
+        df_erp.set_index('MonthYear').drop('Date', axis=1)[['Excess CAPE Yield', 'CPI']]
+    ])
 
 
     return
