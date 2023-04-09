@@ -144,9 +144,6 @@ def consolidate_time_series():
     df_nominal_month_end = df_nominal.groupby('MonthYear').tail(1)
     dfs.append(df_nominal_month_end.set_index('MonthYear').drop('Date', axis=1))
 
-    # df_real_interest_rate = df_nominal.join(df_be)
-
-
     df_real_gdp = data_sets[TS_REAL_GDP]
     df_real_gdp['RealGDP Annualized Growth 1yr'] = (df_real_gdp['RealGDP']/df_real_gdp['RealGDP'].shift(1*4)) - 1
     df_real_gdp['RealGDP Annualized Growth 3yr'] = ((df_real_gdp['RealGDP']/df_real_gdp['RealGDP'].shift(3*4)))**(1/3)-1
@@ -170,6 +167,26 @@ def consolidate_time_series():
     df_acm_term_premia = data_sets[TS_ACM_TERM_PREMIA]
     df_acm_term_premia_month_end = df_acm_term_premia.groupby('MonthYear').tail(1)
     dfs.append(df_acm_term_premia_month_end.set_index('MonthYear').drop('Date', axis=1))
+
+    print('real interest') # df_real_interest_rate = df_nominal.join(df_be)
+    df_real_irs = []
+    for ts_nom, ts_be, name_real in [
+        ('UST2Y', 'USGGBE02 Index', 'Real IR 2Y'), ('UST5Y', 'USGGBE05 Index', 'Real IR 5Y'),
+        ('UST10Y', 'USGGBE10 Index', 'Real IR 10Y'), ('UST30Y', 'USGGBE30 Index', 'Real IR 30Y')
+    ]:
+        df_real_calc = pd.merge(
+            df_nominal[['Date', ts_nom]], df_be[['Date', ts_be]], on=['Date'], how='outer'
+        )
+        df_real_calc[name_real] = df_real_calc[ts_nom] - df_real_calc[ts_be]
+        df_real_calc['MonthYear'] = df_real_calc['Date'].apply(_date_month_format)
+
+        df_real_irs.append(df_real_calc.sort_values('Date').groupby('MonthYear').tail(1)[['MonthYear', name_real]])
+
+    df_real_all = reduce(lambda a, b: pd.merge(a, b, how='outer'), df_real_irs[1:], df_real_irs[0]).set_index('MonthYear')
+
+    print('residual')
+    print('recession before /  after 1 year')
+
 
     df_out = reduce(lambda a, b: a.join(b), dfs[1:], dfs[0]).sort_values('Date', ascending=False)
 
