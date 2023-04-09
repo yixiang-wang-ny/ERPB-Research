@@ -5,6 +5,7 @@ import datetime as dt
 import dateutil.parser
 import pandas.tseries.offsets as offsets
 from functools import reduce
+from sklearn import linear_model
 
 TS_ERP = 'ERP'
 TS_RECESSION = 'Recession'
@@ -205,11 +206,18 @@ def consolidate_time_series():
     df_acm_term_premia_month_end = df_acm_term_premia.groupby('MonthYear').tail(1)
     dfs.append(df_acm_term_premia_month_end.set_index('MonthYear').drop('Date', axis=1))
 
-    print('residual')
-    print('recession before /  after 1 year')
-
-
     df_out = reduce(lambda a, b: a.join(b), dfs[1:], dfs[0]).sort_values('Date', ascending=False)
+
+    df_residual_reg = df_out[['US IG Spread', 'Excess CAPE Yield', 'ACMTP10']].copy()
+    df_residual_reg = df_residual_reg[df_residual_reg.notnull().all(axis=1)]
+    model = linear_model.LinearRegression()
+    model.fit(
+        df_residual_reg[['Excess CAPE Yield', 'ACMTP10']].to_numpy(), df_residual_reg[['US IG Spread']].to_numpy()
+    )
+    residuals = df_residual_reg[['US IG Spread']].to_numpy() - model.predict(df_residual_reg[['Excess CAPE Yield', 'ACMTP10']].to_numpy())
+
+    df_residual_reg['US IG Spread Ex ERPB And Term Premia'] = residuals
+    df_out = df_out.join(df_residual_reg)
 
     for col in [
         'RealGDP', 'RealGDP Annualized Growth 1yr', 'RealGDP Annualized Growth 3yr', 'RealGDP Annualized Growth 5yr'

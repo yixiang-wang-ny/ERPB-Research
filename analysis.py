@@ -96,7 +96,7 @@ def analysis(df, bucket, feature, box_plot_w_all_samples=True):
         print('Scatter failed probably due to non numerical feature value')
 
     try:
-        mod = sm.OLS(df_grouped['Excess CAPE Yield'], df_grouped[feature])
+        mod = sm.OLS(df_grouped['Excess CAPE Yield'], sm.add_constant(df_grouped[feature]))
         res = mod.fit()
         print(res.summary())
     except:
