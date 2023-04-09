@@ -134,11 +134,11 @@ def consolidate_time_series():
 
         for recession_start, _, year_bf_recession_start, _ in recession_periods:
             if year_bf_recession_start <= x <= recession_start:
-                return f'1Yr Before Recession'
+                return f'1Yr Before'
 
         for _, recession_end, _, year_after_recession_end in recession_periods:
             if recession_end <= x <= year_after_recession_end:
-                return f'1Yr After Recession'
+                return f'1Yr After'
 
         return 'Other time'
 
