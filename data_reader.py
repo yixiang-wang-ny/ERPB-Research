@@ -129,6 +129,7 @@ def consolidate_time_series():
     df_erp['Recession Period'] = df_erp['Date'].apply(_get_recession)
     df_erp['In Recession'] = df_erp['Recession Period'].notnull()
     df_erp['CPI Change'] = df_erp['CPI'] - df_erp['CPI'].shift(1)
+    df_erp['CPI Pct Change'] = (df_erp['CPI'] - df_erp['CPI'].shift(1)) / df_erp['CPI'].shift(1)
 
     dfs.append(df_erp.set_index('MonthYear')[['Date', 'Excess CAPE Yield', 'CPI', 'CPI Change', 'Recession Period', 'In Recession']])
 
@@ -143,10 +144,13 @@ def consolidate_time_series():
     df_nominal_month_end = df_nominal.groupby('MonthYear').tail(1)
     dfs.append(df_nominal_month_end.set_index('MonthYear').drop('Date', axis=1))
 
+    # df_real_interest_rate = df_nominal.join(df_be)
+
+
     df_real_gdp = data_sets[TS_REAL_GDP]
-    df_real_gdp['RealGDP Annualized Growth 1yr'] = (df_real_gdp['RealGDP']/df_real_gdp['RealGDP'].shift(1)) - 1
-    df_real_gdp['RealGDP Annualized Growth 3yr'] = ((df_real_gdp['RealGDP']/df_real_gdp['RealGDP'].shift(3)))**(1/3)-1
-    df_real_gdp['RealGDP Annualized Growth 5yr'] = ((df_real_gdp['RealGDP'] / df_real_gdp['RealGDP'].shift(5))) ** (1/5)-1
+    df_real_gdp['RealGDP Annualized Growth 1yr'] = (df_real_gdp['RealGDP']/df_real_gdp['RealGDP'].shift(1*4)) - 1
+    df_real_gdp['RealGDP Annualized Growth 3yr'] = ((df_real_gdp['RealGDP']/df_real_gdp['RealGDP'].shift(3*4)))**(1/3)-1
+    df_real_gdp['RealGDP Annualized Growth 5yr'] = ((df_real_gdp['RealGDP'] / df_real_gdp['RealGDP'].shift(5*4))) ** (1/5)-1
     dfs.append(df_real_gdp.set_index('MonthYear').drop('Date', axis=1))
 
     df_credit_spread = data_sets[TS_CREDIT_SPREAD]
@@ -155,7 +159,9 @@ def consolidate_time_series():
 
     df_ts_monetary = data_sets[TS_MONETARY]
     df_ts_monetary['Real_M1_Growth'] = df_ts_monetary['Real_M1'] - df_ts_monetary['Real_M1'].shift(1)
+    df_ts_monetary['Real_M1_Pct_Growth'] = (df_ts_monetary['Real_M1'] - df_ts_monetary['Real_M1'].shift(1)) / df_ts_monetary['Real_M1'].shift(1)
     df_ts_monetary['Real_M2_Growth'] = df_ts_monetary['Real_M2'] - df_ts_monetary['Real_M2'].shift(1)
+    df_ts_monetary['Real_M2_Pct_Growth'] = (df_ts_monetary['Real_M2'] - df_ts_monetary['Real_M2'].shift(1)) / df_ts_monetary['Real_M2'].shift(1)
     dfs.append(df_ts_monetary.set_index('MonthYear').drop('Date', axis=1))
 
     df_unemployment = data_sets[TS_UNEMPLOYMENT]
