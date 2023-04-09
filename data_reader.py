@@ -217,7 +217,7 @@ def consolidate_time_series():
     residuals = df_residual_reg[['US IG Spread']].to_numpy() - model.predict(df_residual_reg[['Excess CAPE Yield', 'ACMTP10']].to_numpy())
 
     df_residual_reg['US IG Spread Ex ERPB And Term Premia'] = residuals
-    df_out = df_out.join(df_residual_reg)
+    df_out = df_out.join(df_residual_reg[['US IG Spread Ex ERPB And Term Premia']])
 
     for col in [
         'RealGDP', 'RealGDP Annualized Growth 1yr', 'RealGDP Annualized Growth 3yr', 'RealGDP Annualized Growth 5yr'
