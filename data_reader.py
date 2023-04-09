@@ -149,7 +149,9 @@ def consolidate_time_series():
     df_erp['CPI Change'] = df_erp['CPI'] - df_erp['CPI'].shift(1)
     df_erp['CPI Pct Change'] = (df_erp['CPI'] - df_erp['CPI'].shift(1)) / df_erp['CPI'].shift(1)
 
-    dfs.append(df_erp.set_index('MonthYear')[['Date', 'Excess CAPE Yield', 'CPI', 'CPI Change', 'Recession Period', 'In Recession']])
+    dfs.append(df_erp.set_index('MonthYear')[[
+        'Date', 'Excess CAPE Yield', 'CPI', 'CPI Change', 'Recession Phase', 'Recession Period', 'In Recession'
+    ]])
 
     df_be = data_sets[TS_BREAK_EVEN]
     df_be_month_end = df_be.groupby('MonthYear').tail(1)
