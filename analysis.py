@@ -98,13 +98,13 @@ class CustomizedRangeBucket(Bucket):
         return df
 
 
-def analysis(df, bucket, feature, box_plot_w_all_samples=True):
+def analysis(df, bucket, feature, box_plot_w_all_samples=True, figsize=(10, 5)):
     df_grouped = bucket.divide(df, feature)
 
     try:
         df_grouped_scatter = df_grouped.copy()
         df_grouped_scatter[feature] = df_grouped_scatter[feature].apply(float)
-        df_grouped_scatter.plot.scatter(x=feature, y='Excess CAPE Yield', )
+        df_grouped_scatter.plot.scatter(x=feature, y='Excess CAPE Yield', figsize=figsize)
     except:
         print('Scatter failed probably due to non numerical feature value')
 
@@ -126,7 +126,7 @@ def analysis(df, bucket, feature, box_plot_w_all_samples=True):
     else:
         df_box = df_grouped[['Excess CAPE Yield', 'group']]
 
-    df_box.boxplot(by="group", figsize=(20, 10))
+    df_box.boxplot(by="group", figsize=figsize)
 
 
 def main():
