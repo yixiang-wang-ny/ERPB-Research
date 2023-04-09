@@ -49,6 +49,15 @@ class BooleanBucket(Bucket):
         return df
 
 
+class LabelBucket(Bucket):
+
+    def _divide(self, df, feature) -> pd.DataFrame:
+
+        df[self.group_col_name] = df[feature]
+
+        return df
+
+
 BucketRange = namedtuple('BucketRange', ('low', 'high'))
 
 
@@ -76,7 +85,7 @@ class CustomizedRangeBucket(Bucket):
         return df
 
 
-def analysis(df, bucket, feature):
+def analysis(df, bucket, feature, box_plot_w_all_samples=True):
     df_grouped = bucket.divide(df, feature)
 
     try:
@@ -97,28 +106,41 @@ def analysis(df, bucket, feature):
     print()
     print('Bucket Basic Stats:')
     print(df_grouped.groupby('group')['Excess CAPE Yield'].describe())
-    df_grouped[['Excess CAPE Yield', 'group']].boxplot(by="group")
+    if box_plot_w_all_samples:
+        df_grouped_all = df_grouped[['Excess CAPE Yield']].copy()
+        df_grouped_all['group'] = " All Samples "
+        df_box = pd.concat([df_grouped_all, df_grouped[['Excess CAPE Yield', 'group']]])
+    else:
+        df_box = df_grouped[['Excess CAPE Yield', 'group']]
+
+    df_box.boxplot(by="group")
 
 
 def main():
 
+    # df = get_data()
+    # bucket = QuantileBucket(4)
+    # feature = 'Fed Fund Effective Rate'
+    #
+    # analysis(df, bucket, feature)
+    #
+    # df = get_data()
+    # bucket = BooleanBucket()
+    # feature = 'In Recession'
+    #
+    # analysis(df, bucket, feature)
+    #
+    # df = get_data()
+    # bucket = CustomizedRangeBucket(
+    #     ranges=[BucketRange(low=0, high=5), BucketRange(low=5, high=10), BucketRange(low=10, high=15)]
+    # )
+    # feature = 'Unemployment Rate'
+    #
+    # analysis(df, bucket, feature)
+
     df = get_data()
-    bucket = QuantileBucket(4)
-    feature = 'Fed Fund Effective Rate'
-
-    analysis(df, bucket, feature)
-
-    df = get_data()
-    bucket = BooleanBucket()
-    feature = 'In Recession'
-
-    analysis(df, bucket, feature)
-
-    df = get_data()
-    bucket = CustomizedRangeBucket(
-        ranges=[BucketRange(low=0, high=5), BucketRange(low=5, high=10), BucketRange(low=10, high=15)]
-    )
-    feature = 'Unemployment Rate'
+    bucket = LabelBucket()
+    feature = 'Recession Phase'
 
     analysis(df, bucket, feature)
 
