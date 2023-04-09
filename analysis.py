@@ -33,7 +33,7 @@ class Bucket(ABC):
             if len(x) == 0:
                 return x
 
-            return ('[' if x[0] != '[' else '') + x + (']' if x[-1] != ']' else '')
+            return f" {x}"
 
         df_divided[self.group_col_name] = df_divided[self.group_col_name].apply(_norm_group_name)
 
@@ -121,7 +121,7 @@ def analysis(df, bucket, feature, box_plot_w_all_samples=True):
     print(df_grouped.groupby('group')['Excess CAPE Yield'].describe())
     if box_plot_w_all_samples:
         df_grouped_all = df_grouped[['Excess CAPE Yield']].copy()
-        df_grouped_all['group'] = " All Samples "
+        df_grouped_all['group'] = "All Samples"
         df_box = pd.concat([df_grouped_all, df_grouped[['Excess CAPE Yield', 'group']]])
     else:
         df_box = df_grouped[['Excess CAPE Yield', 'group']]
