@@ -24,6 +24,19 @@ class Bucket(ABC):
         df = df[df[feature].notnull() & df[self.dependent_variable].notnull()]
         df_divided = self._divide(df.copy(), feature)
 
+        def _norm_group_name(x):
+            if pd.isnull(x):
+                return x
+
+            x = str(x)
+
+            if len(x) == 0:
+                return x
+
+            return ('[' if x[0] != '[' else '') + x + (']' if x[-1] != ']' else '')
+
+        df_divided[self.group_col_name] = df_divided[self.group_col_name].apply(_norm_group_name)
+
         return df_divided[
             ['MonthYear', 'Date', self.dependent_variable, feature, self.group_col_name]
         ].set_index('MonthYear')
