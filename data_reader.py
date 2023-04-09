@@ -114,18 +114,36 @@ def consolidate_time_series():
 
     dfs = []
 
-    recession_periods = [
-        (row[0], row[1]) for _, row in data_sets[TS_RECESSION].iterrows()
-    ]
+    recession_periods = [(
+        row[0], row[1],
+        _dt2date(dateutil.parser.parse(str(row[0] - 365 * offsets.Day()))),
+        _dt2date(dateutil.parser.parse(str(row[1] + 365 * offsets.Day()))),
+     ) for _, row in data_sets[TS_RECESSION].iterrows()]
 
     def _get_recession(x):
-        for recession_start, recession_end in recession_periods:
+        for recession_start, recession_end, _, _ in recession_periods:
             if recession_start <= x <= recession_end:
                 return f'{recession_start.strftime("%Y/%m")}-{recession_end.strftime("%Y/%m")}'
 
         return None
 
+    def _get_recession_phase(x):
+        for recession_start, recession_end, _, _ in recession_periods:
+            if recession_start <= x <= recession_end:
+                return f'In Recession'
+
+        for recession_start, _, year_bf_recession_start, _ in recession_periods:
+            if year_bf_recession_start <= x <= recession_start:
+                return f'1Yr Before Recession'
+
+        for _, recession_end, _, year_after_recession_end in recession_periods:
+            if recession_end <= x <= year_after_recession_end:
+                return f'1Yr After Recession'
+
+        return 'Other time'
+
     df_erp = data_sets[TS_ERP]
+    df_erp['Recession Phase'] = df_erp['Date'].apply(_get_recession_phase)
     df_erp['Recession Period'] = df_erp['Date'].apply(_get_recession)
     df_erp['In Recession'] = df_erp['Recession Period'].notnull()
     df_erp['CPI Change'] = df_erp['CPI'] - df_erp['CPI'].shift(1)
@@ -143,6 +161,23 @@ def consolidate_time_series():
     df_nominal = data_sets[TS_NOMINAL]
     df_nominal_month_end = df_nominal.groupby('MonthYear').tail(1)
     dfs.append(df_nominal_month_end.set_index('MonthYear').drop('Date', axis=1))
+
+    df_real_irs = []
+    for ts_nom, ts_be, name_real in [
+        ('UST2Y', 'USGGBE02 Index', 'Real IR 2Y'), ('UST5Y', 'USGGBE05 Index', 'Real IR 5Y'),
+        ('UST10Y', 'USGGBE10 Index', 'Real IR 10Y'), ('UST30Y', 'USGGBE30 Index', 'Real IR 30Y')
+    ]:
+        df_real_calc = pd.merge(
+            df_nominal[['Date', ts_nom]], df_be[['Date', ts_be]], on=['Date'], how='outer'
+        )
+        df_real_calc[name_real] = df_real_calc[ts_nom] - df_real_calc[ts_be]
+        df_real_calc['MonthYear'] = df_real_calc['Date'].apply(_date_month_format)
+
+        df_real_irs.append(df_real_calc.sort_values('Date').groupby('MonthYear').tail(1)[['MonthYear', name_real]])
+
+    df_real_all = reduce(lambda a, b: pd.merge(a, b, how='outer'), df_real_irs[1:], df_real_irs[0]).set_index(
+        'MonthYear')
+    dfs.append(df_real_all)
 
     df_real_gdp = data_sets[TS_REAL_GDP]
     df_real_gdp['RealGDP Annualized Growth 1yr'] = (df_real_gdp['RealGDP']/df_real_gdp['RealGDP'].shift(1*4)) - 1
@@ -167,22 +202,6 @@ def consolidate_time_series():
     df_acm_term_premia = data_sets[TS_ACM_TERM_PREMIA]
     df_acm_term_premia_month_end = df_acm_term_premia.groupby('MonthYear').tail(1)
     dfs.append(df_acm_term_premia_month_end.set_index('MonthYear').drop('Date', axis=1))
-
-    print('real interest') # df_real_interest_rate = df_nominal.join(df_be)
-    df_real_irs = []
-    for ts_nom, ts_be, name_real in [
-        ('UST2Y', 'USGGBE02 Index', 'Real IR 2Y'), ('UST5Y', 'USGGBE05 Index', 'Real IR 5Y'),
-        ('UST10Y', 'USGGBE10 Index', 'Real IR 10Y'), ('UST30Y', 'USGGBE30 Index', 'Real IR 30Y')
-    ]:
-        df_real_calc = pd.merge(
-            df_nominal[['Date', ts_nom]], df_be[['Date', ts_be]], on=['Date'], how='outer'
-        )
-        df_real_calc[name_real] = df_real_calc[ts_nom] - df_real_calc[ts_be]
-        df_real_calc['MonthYear'] = df_real_calc['Date'].apply(_date_month_format)
-
-        df_real_irs.append(df_real_calc.sort_values('Date').groupby('MonthYear').tail(1)[['MonthYear', name_real]])
-
-    df_real_all = reduce(lambda a, b: pd.merge(a, b, how='outer'), df_real_irs[1:], df_real_irs[0]).set_index('MonthYear')
 
     print('residual')
     print('recession before /  after 1 year')
