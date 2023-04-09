@@ -113,7 +113,7 @@ def analysis(df, bucket, feature, box_plot_w_all_samples=True):
         res = mod.fit()
         print(res.summary())
     except:
-        print('Scatter failed probably due to non numerical feature value')
+        print('Linear model failed probably due to non numerical feature value')
 
     # buckets
     print()
@@ -126,7 +126,7 @@ def analysis(df, bucket, feature, box_plot_w_all_samples=True):
     else:
         df_box = df_grouped[['Excess CAPE Yield', 'group']]
 
-    df_box.boxplot(by="group")
+    df_box.boxplot(by="group", figsize=(20, 10))
 
 
 def main():
